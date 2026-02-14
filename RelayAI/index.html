@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RelayAI - Trainable Scratch AI</title>
+<style>
+body { font-family: Arial; background:#f2f2f2; display:flex; justify-content:center; align-items:center; height:100vh; margin:0;}
+.chatbox { width:420px; height:600px; background:white; border-radius:18px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 0 20px rgba(0,0,0,0.2);}
+.header { background:black; color:white; padding:18px; text-align:center; font-size:20px; font-weight:bold;}
+.messages { flex:1; padding:15px; overflow-y:auto; background:#fafafa;}
+.msg { padding:12px 14px; margin:10px 0; border-radius:14px; max-width:75%;}
+.user { background:#007bff; color:white; margin-left:auto;}
+.bot { background:#e5e5e5; color:black; margin-right:auto;}
+.input-area { display:flex; padding:12px; border-top:1px solid #ddd;}
+input { flex:1; padding:10px; border-radius:10px; border:1px solid #ccc; outline:none;}
+button { margin-left:10px; padding:10px 14px; border:none; background:black; color:white; border-radius:10px; cursor:pointer;}
+button:hover { background:#333;}
+</style>
+</head>
+<body>
+
+<div class="chatbox">
+  <div class="header">RelayAI</div>
+  <div class="messages" id="messages">
+    <div class="msg bot">hi! i’m RelayAI 🤖 ready to learn from you!</div>
+  </div>
+  <div class="input-area">
+    <input id="userInput" placeholder="Talk to RelayAI..." />
+    <button id="sendBtn">Send</button>
+  </div>
+</div>
+<script src"index.js"></script>
+</body>
+</html>
