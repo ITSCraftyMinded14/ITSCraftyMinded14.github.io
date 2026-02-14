@@ -1,0 +1,68 @@
+/* Import a modern retro-inspired font */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto+Mono:wght@400;700&display=swap');
+
+/* Base styles */
+body {
+    font-family: 'Roboto Mono', 'Press Start 2P', monospace;
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+}
+
+/* Headings */
+h2, h3 {
+    font-family: 'Press Start 2P', cursive;
+    color: #ffdd57;
+    margin: 1rem 0 0.5rem 0;
+    text-shadow: 1px 1px 2px #000;
+}
+
+/* Paragraphs */
+p, label {
+    font-family: 'Roboto Mono', monospace;
+    line-height: 1.5;
+    color: #ddd;
+}
+
+/* Buttons */
+button {
+    font-family: 'Press Start 2P', cursive;
+    background: linear-gradient(135deg, #ff7f50, #ffdd57);
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    color: #1e1e1e;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    background: linear-gradient(135deg, #ffdd57, #ff7f50);
+}
+
+button:active {
+    transform: translateY(1px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
+
+/* Inputs (optional) */
+input, textarea {
+    font-family: 'Roboto Mono', monospace;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #555;
+    background-color: #2e2e2e;
+    color: #f0f0f0;
+    outline: none;
+    transition: border 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+input:focus, textarea:focus {
+    border-color: #ffdd57;
+    box-shadow: 0 0 8px #ffdd57;
+}
