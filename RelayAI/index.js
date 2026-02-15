@@ -21,6 +21,7 @@ const lastUsed = {};
 
 // helper: add message
 function addMessage(text,type){
+  document.createElement("br")
   const msg = document.createElement("div");
   msg.className = "msg " + type;
   msg.innerText = text;
