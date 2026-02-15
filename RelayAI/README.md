@@ -1,4 +1,5 @@
 <div align="center">
-# Relay AI
-My own AI project I created!
+  <h1>Relay AI<h1>
+  -----------
+  My own AI project I created!
 </div>
