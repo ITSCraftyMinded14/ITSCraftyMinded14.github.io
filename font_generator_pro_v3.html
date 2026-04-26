@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Font Generator Pro</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;
+  --border:rgba(255,255,255,0.08);--border-hover:rgba(255,255,255,0.18);
+  --text:#f0f0f0;--muted:#888;
+  --accent:#ffc900;--accent-dim:rgba(255,201,0,0.12);
+  --radius:12px;
+  --font-display:'Syne',sans-serif;--font-mono:'Space Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);min-height:100vh;padding:0;transition:background 0.3s,color 0.3s;}
+body.light{--bg:#f5f5f0;--surface:#ffffff;--surface2:#ebebeb;--border:rgba(0,0,0,0.08);--border-hover:rgba(0,0,0,0.2);--text:#111111;--muted:#666;}
+.app{display:flex;flex-direction:column;min-height:100vh;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:100;transition:background 0.3s,border-color 0.3s;}
+.logo{font-size:13px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);transition:color 0.3s;}
+.topbar-right{display:flex;align-items:center;gap:14px;}
+.topbar-hint{font-size:11px;color:var(--muted);font-family:var(--font-mono);}
+.hamburger{width:32px;height:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;border-radius:8px;transition:background 0.15s;}
+.hamburger:hover{background:var(--surface2);}
+.ham-line{width:18px;height:2px;background:var(--text);border-radius:2px;transition:background 0.3s;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0);z-index:200;pointer-events:none;transition:background 0.3s;}
+.overlay.open{background:rgba(0,0,0,0.6);pointer-events:all;}
+.settings-drawer{position:fixed;top:0;right:-320px;width:300px;height:100%;background:var(--surface);border-left:1px solid var(--border);z-index:300;transition:right 0.3s cubic-bezier(.4,0,.2,1),background 0.3s;display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,0.3);}
+.settings-drawer.open{right:0;}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);}
+.drawer-title{font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.close-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:6px;font-size:16px;color:var(--muted);transition:background 0.15s,color 0.15s;}
+.close-btn:hover{background:var(--surface2);color:var(--text);}
+.drawer-body{padding:20px;display:flex;flex-direction:column;gap:24px;overflow-y:auto;flex:1;}
+.drawer-footer{padding:16px 20px;border-top:1px solid var(--border);}
+.drawer-section-label{font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.mode-btns{display:flex;gap:8px;}
+.mode-btn{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;font-weight:700;font-family:var(--font-display);cursor:pointer;transition:all 0.15s;text-align:center;}
+.mode-btn:hover{border-color:var(--border-hover);color:var(--text);}
+.mode-btn.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+.accent-opts{display:flex;flex-direction:column;gap:8px;}
+.accent-opt{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);cursor:pointer;transition:all 0.15s;}
+.accent-opt:hover{border-color:var(--border-hover);}
+.accent-opt.active{border-color:var(--accent);}
+.accent-dot{width:20px;height:20px;border-radius:50%;flex-shrink:0;}
+.accent-name{font-size:12px;color:var(--text);font-weight:700;}
+.accent-hex{font-size:10px;color:var(--muted);font-family:var(--font-mono);}
+
+.classic-btn{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,80,80,0.25);background:rgba(255,80,80,0.06);color:#ff6b6b;font-size:12px;font-weight:700;font-family:var(--font-display);cursor:pointer;transition:all 0.2s;text-align:center;letter-spacing:0.06em;}
+.classic-btn:hover{border-color:rgba(255,80,80,0.5);background:rgba(255,80,80,0.12);color:#ff4444;}
+.classic-btn-sub{font-size:10px;font-weight:400;color:var(--muted);margin-top:3px;font-family:var(--font-mono);}
+
+.confirm-modal-wrap{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.confirm-modal-wrap.open{opacity:1;pointer-events:all;}
+.confirm-modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 24px;max-width:280px;width:90%;display:flex;flex-direction:column;gap:16px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.confirm-title{font-size:15px;font-weight:700;color:var(--text);}
+.confirm-body{font-size:12px;color:var(--muted);line-height:1.6;font-family:var(--font-mono);}
+.confirm-actions{display:flex;gap:8px;}
+.confirm-cancel{flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;font-weight:700;font-family:var(--font-display);cursor:pointer;transition:all 0.15s;text-align:center;}
+.confirm-cancel:hover{border-color:var(--border-hover);color:var(--text);}
+.confirm-go{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,80,80,0.4);background:rgba(255,80,80,0.1);color:#ff5555;font-size:12px;font-weight:700;font-family:var(--font-display);cursor:pointer;transition:all 0.15s;text-align:center;}
+.confirm-go:hover{background:rgba(255,80,80,0.2);border-color:#ff5555;}
+
+.preview-stage{display:flex;align-items:center;justify-content:center;padding:40px 32px;background:var(--surface);border-bottom:1px solid var(--border);position:relative;overflow:hidden;cursor:text;transition:background 0.3s;}
+.preview-stage::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent 39px,rgba(128,128,128,0.06) 39px,rgba(128,128,128,0.06) 40px);pointer-events:none;}
+.preview-bg-toggle{position:absolute;top:12px;right:12px;display:flex;gap:6px;z-index:2;}
+.bg-btn{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:border-color 0.15s;}
+.bg-btn.active{border-color:var(--accent);}
+#previewText{font-size:48px;line-height:1.2;letter-spacing:0px;color:#ffffff;text-align:center;word-break:break-word;max-width:100%;outline:none;position:relative;z-index:1;min-width:20px;background:transparent;border:none;width:100%;font-family:sans-serif;}
+#previewText:empty::before{content:attr(data-placeholder);color:rgba(128,128,128,0.3);}
+.controls{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:200px;min-width:200px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:2px;padding:12px 8px;background:var(--bg);transition:background 0.3s,border-color 0.3s;}
+.nav-item{padding:9px 14px;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:10px;user-select:none;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--accent-dim);color:var(--accent);}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.panel{flex:1;padding:24px;overflow-y:auto;display:none;flex-direction:column;gap:20px;background:var(--bg);transition:background 0.3s;}
+.panel.active{display:flex;}
+.section-label{font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.control-group{display:flex;flex-direction:column;gap:6px;}
+.slider-row{display:flex;align-items:center;gap:12px;}
+.slider-label{font-size:11px;color:var(--muted);font-family:var(--font-mono);width:110px;flex-shrink:0;}
+.slider-value{font-size:11px;color:var(--accent);font-family:var(--font-mono);width:44px;text-align:right;flex-shrink:0;transition:color 0.3s;}
+input[type="range"]{-webkit-appearance:none;flex:1;height:3px;background:var(--surface2);border-radius:2px;outline:none;border:none;}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;transition:transform 0.1s,background 0.3s;}
+input[type="range"]::-webkit-slider-thumb:hover{transform:scale(1.2);}
+.upload-zone{border:1.5px dashed var(--border-hover);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;background:var(--surface);}
+.upload-zone:hover{border-color:var(--accent);background:var(--accent-dim);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-zone-label{font-size:12px;color:var(--muted);}
+.upload-zone-icon{font-size:24px;margin-bottom:6px;color:var(--muted);}
+.font-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.font-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border-hover);font-size:11px;cursor:pointer;transition:all 0.15s;font-family:var(--font-mono);color:var(--muted);background:var(--surface);}
+.font-chip:hover{border-color:var(--accent);color:var(--text);}
+.font-chip.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+.web-fonts-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.web-font-card{border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all 0.15s;background:var(--surface);}
+.web-font-card:hover{border-color:var(--border-hover);}
+.web-font-card.active{border-color:var(--accent);background:var(--accent-dim);}
+.web-font-name{font-size:11px;color:var(--muted);font-family:var(--font-mono);}
+.web-font-preview{font-size:18px;color:var(--text);margin-top:2px;line-height:1.1;}
+.color-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.color-swatch{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform 0.15s,border-color 0.15s;}
+.color-swatch:hover{transform:scale(1.15);}
+.color-swatch.active{border-color:var(--accent);}
+.color-input-row{display:flex;align-items:center;gap:10px;margin-top:4px;}
+input[type="color"]{width:36px;height:36px;border:none;border-radius:50%;cursor:pointer;padding:0;background:none;-webkit-appearance:none;}
+input[type="color"]::-webkit-color-swatch-wrapper{padding:0;border-radius:50%;}
+input[type="color"]::-webkit-color-swatch{border:none;border-radius:50%;}
+.hex-input{background:var(--surface2);border:1px solid var(--border-hover);border-radius:8px;padding:6px 10px;font-size:12px;font-family:var(--font-mono);color:var(--text);width:90px;outline:none;}
+.hex-input:focus{border-color:var(--accent);}
+.text-input{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:14px;color:var(--text);width:100%;outline:none;transition:border-color 0.15s;font-family:var(--font-display);resize:vertical;min-height:44px;}
+.text-input:focus{border-color:var(--accent);}
+.align-btns,.style-btns{display:flex;gap:4px;}
+.align-btn,.style-btn{flex:1;padding:7px;background:var(--surface);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;transition:all 0.15s;color:var(--muted);text-align:center;}
+.align-btn{font-size:13px;}
+.align-btn:hover,.style-btn:hover{border-color:var(--border-hover);color:var(--text);}
+.align-btn.active,.style-btn.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+.style-btn{font-family:var(--font-mono);}
+.divider{height:1px;background:var(--border);margin:4px 0;}
+.dl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.dl-btn{padding:12px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border);cursor:pointer;transition:all 0.2s;text-align:center;color:var(--text);font-family:var(--font-display);}
+.dl-btn:hover{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+.dl-btn-icon{font-size:20px;margin-bottom:4px;}
+.dl-btn-label{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:inherit;}
+.dl-btn-sub{font-size:10px;color:var(--muted);margin-top:2px;font-family:var(--font-mono);}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-family:var(--font-mono);background:var(--accent-dim);color:var(--accent);margin-left:6px;}
+.transform-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.transform-btn{padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:11px;font-family:var(--font-mono);color:var(--muted);text-align:center;transition:all 0.15s;}
+.transform-btn:hover{border-color:var(--border-hover);color:var(--text);}
+.transform-btn.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="logo">FontGen Pro</div>
+    <div class="topbar-right">
+      <div class="topbar-hint">click preview to edit</div>
+      <div class="hamburger" id="hamburgerBtn" onclick="openDrawer()">
+        <div class="ham-line"></div><div class="ham-line"></div><div class="ham-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+  <div class="settings-drawer" id="settingsDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title">Settings</div>
+      <div class="close-btn" onclick="closeDrawer()">✕</div>
+    </div>
+    <div class="drawer-body">
+      <div>
+        <div class="drawer-section-label">Theme</div>
+        <div class="mode-btns">
+          <div class="mode-btn active" id="darkModeBtn" onclick="setMode('dark')">Dark</div>
+          <div class="mode-btn" id="lightModeBtn" onclick="setMode('light')">Light</div>
+        </div>
+      </div>
+      <div>
+        <div class="drawer-section-label">Accent Color</div>
+        <div class="accent-opts" id="accentOpts"></div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <div class="classic-btn" onclick="showClassicConfirm()">
+        Classic Mode
+        <div class="classic-btn-sub">reverts to original · reload to undo</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-modal-wrap" id="confirmWrap">
+    <div class="confirm-modal">
+      <div class="confirm-title">Switch to Classic Mode?</div>
+      <div class="confirm-body">This will replace the entire app with the original version. You won't be able to go back without reloading the page.</div>
+      <div class="confirm-actions">
+        <div class="confirm-cancel" onclick="hideClassicConfirm()">Cancel</div>
+        <div class="confirm-go" onclick="goClassic()">Go Classic</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="preview-stage" id="stage">
+    <div class="preview-bg-toggle" id="bgToggle"></div>
+    <div id="previewText" contenteditable="true" spellcheck="false" data-placeholder="Type something...">Your Text Here</div>
+  </div>
+
+  <div class="controls">
+    <div class="sidebar">
+      <div class="nav-item active" data-panel="text" onclick="switchPanel('text')"><div class="nav-dot"></div>Text</div>
+      <div class="nav-item" data-panel="font" onclick="switchPanel('font')"><div class="nav-dot"></div>Font</div>
+      <div class="nav-item" data-panel="style" onclick="switchPanel('style')"><div class="nav-dot"></div>Style</div>
+      <div class="nav-item" data-panel="color" onclick="switchPanel('color')"><div class="nav-dot"></div>Color</div>
+      <div class="nav-item" data-panel="export" onclick="switchPanel('export')"><div class="nav-dot"></div>Export</div>
+    </div>
+
+    <div id="panel-text" class="panel active">
+      <div class="control-group">
+        <div class="section-label">Content</div>
+        <textarea class="text-input" id="textInputBox" rows="2">Your Text Here</textarea>
+      </div>
+      <div class="divider"></div>
+      <div class="control-group">
+        <div class="section-label">Alignment</div>
+        <div class="align-btns">
+          <div class="align-btn active" data-align="left" onclick="setAlign('left')">&#8676;</div>
+          <div class="align-btn" data-align="center" onclick="setAlign('center')">&#8700;</div>
+          <div class="align-btn" data-align="right" onclick="setAlign('right')">&#8677;</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="control-group">
+        <div class="section-label">Transform</div>
+        <div class="transform-grid">
+          <div class="transform-btn active" data-tx="none" onclick="setTransform('none')">As typed</div>
+          <div class="transform-btn" data-tx="uppercase" onclick="setTransform('uppercase')">UPPER</div>
+          <div class="transform-btn" data-tx="lowercase" onclick="setTransform('lowercase')">lower</div>
+          <div class="transform-btn" data-tx="capitalize" onclick="setTransform('capitalize')">Title</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-font" class="panel">
+      <div class="control-group">
+        <div class="section-label">Upload Font</div>
+        <div class="upload-zone">
+          <input type="file" id="fontUpload" multiple accept=".ttf,.otf,.woff,.woff2">
+          <div class="upload-zone-icon">+</div>
+          <div class="upload-zone-label">Drop TTF / OTF / WOFF here</div>
+        </div>
+        <div class="font-chips" id="uploadedFonts"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="control-group">
+        <div class="section-label">Web Fonts <span class="tag">built-in</span></div>
+        <div class="web-fonts-grid" id="webFontsGrid"></div>
+      </div>
+    </div>
+
+    <div id="panel-style" class="panel">
+      <div class="control-group">
+        <div class="section-label">Size & Spacing</div>
+        <div class="slider-row"><span class="slider-label">Font Size</span><input type="range" id="fontSize" min="12" max="120" value="48" step="1"><span class="slider-value" id="fontSizeVal">48px</span></div>
+        <div class="slider-row"><span class="slider-label">Line Height</span><input type="range" id="lineHeight" min="80" max="250" value="120" step="1"><span class="slider-value" id="lineHeightVal">1.2</span></div>
+        <div class="slider-row"><span class="slider-label">Letter Spacing</span><input type="range" id="letterSpacing" min="-5" max="30" value="0" step="1"><span class="slider-value" id="letterSpacingVal">0px</span></div>
+        <div class="slider-row"><span class="slider-label">Opacity</span><input type="range" id="textOpacity" min="10" max="100" value="100" step="1"><span class="slider-value" id="textOpacityVal">100%</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="control-group">
+        <div class="section-label">Style</div>
+        <div class="style-btns">
+          <div class="style-btn" id="boldBtn" onclick="toggleBold()">B</div>
+          <div class="style-btn" id="italicBtn" onclick="toggleItalic()"><em>I</em></div>
+          <div class="style-btn" id="underlineBtn" onclick="toggleUnderline()"><u>U</u></div>
+          <div class="style-btn" id="strikeBtn" onclick="toggleStrike()"><s>S</s></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="control-group">
+        <div class="section-label">Shadow</div>
+        <div class="slider-row"><span class="slider-label">Blur</span><input type="range" id="shadowBlur" min="0" max="40" value="0" step="1"><span class="slider-value" id="shadowBlurVal">0</span></div>
+        <div class="slider-row"><span class="slider-label">Offset X</span><input type="range" id="shadowX" min="-20" max="20" value="0" step="1"><span class="slider-value" id="shadowXVal">0</span></div>
+        <div class="slider-row"><span class="slider-label">Offset Y</span><input type="range" id="shadowY" min="-20" max="20" value="0" step="1"><span class="slider-value" id="shadowYVal">0</span></div>
+      </div>
+    </div>
+
+    <div id="panel-color" class="panel">
+      <div class="control-group">
+        <div class="section-label">Text Color</div>
+        <div class="color-grid" id="textColorSwatches"></div>
+        <div class="color-input-row"><input type="color" id="textColorPicker" value="#ffffff"><input type="text" class="hex-input" id="textHex" value="#ffffff" maxlength="7"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="control-group">
+        <div class="section-label">Background</div>
+        <div class="color-grid" id="bgColorSwatches"></div>
+        <div class="color-input-row"><input type="color" id="bgColorPicker" value="#141414"><input type="text" class="hex-input" id="bgHex" value="#141414" maxlength="7"></div>
+      </div>
+    </div>
+
+    <div id="panel-export" class="panel">
+      <div class="section-label">Export As</div>
+      <div class="dl-grid">
+        <div class="dl-btn" onclick="downloadPNG()"><div class="dl-btn-icon">⬇</div><div class="dl-btn-label">PNG</div><div class="dl-btn-sub">raster image</div></div>
+        <div class="dl-btn" onclick="downloadSVG()"><div class="dl-btn-icon">⬇</div><div class="dl-btn-label">SVG</div><div class="dl-btn-sub">vector embed</div></div>
+        <div class="dl-btn" onclick="downloadSVGPaths()"><div class="dl-btn-icon">⬇</div><div class="dl-btn-label">SVG Paths</div><div class="dl-btn-sub">outlined text</div></div>
+        <div class="dl-btn" onclick="copyCSS()"><div class="dl-btn-icon">⧉</div><div class="dl-btn-label" id="cssBtnLabel">Copy CSS</div><div class="dl-btn-sub">paste in code</div></div>
+      </div>
+      <div class="divider"></div>
+      <div class="control-group">
+        <div class="section-label">Export Scale</div>
+        <div class="slider-row"><span class="slider-label">Scale</span><input type="range" id="exportScale" min="1" max="4" value="2" step="1"><span class="slider-value" id="exportScaleVal">2×</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/opentype.js@latest/dist/opentype.min.js"></script>
+<script>
+const CLASSIC_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Font Generator</title>
+<style>
+body { margin:0; font-family: Arial, sans-serif; background:#f2f2f2; }
+.navbar { position:fixed; top:0; width:100%; height:60px; background:#111; color:#fff; display:flex; align-items:center; padding:0 20px; z-index:1000; }
+.header { margin-top:60px; height:200px; background:linear-gradient(135deg,#4facfe,#00f2fe); display:flex; align-items:center; justify-content:center; color:white; font-size:32px; text-align:center; padding:10px; }
+.container { margin:-50px auto; width:90%; max-width:800px; background:white; border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,0.1); padding:20px; }
+.tabs { display:flex; gap:10px; margin-bottom:20px; }
+.tab { padding:10px 20px; background:#eee; border-radius:10px; cursor:pointer; }
+.tab.active { background:#111; color:white; }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+input, textarea, select, button { width:100%; margin:10px 0; padding:10px; border-radius:10px; border:1px solid #ccc; }
+button { cursor:pointer; background:#111; color:white; border:none; }
+input[type="range"] { -webkit-appearance:none; height:6px; background:#ddd; border-radius:10px; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:#4facfe; cursor:pointer; }
+.file-upload-wrapper { position:relative; }
+.file-upload-wrapper input { position:absolute; width:100%; height:100%; opacity:0; cursor:pointer; }
+.file-upload-label { display:flex; justify-content:center; align-items:center; padding:14px; border:2px dashed #ccc; border-radius:12px; background:#fafafa; }
+.auto-textarea { resize:none; overflow:hidden; box-sizing:border-box; min-height:40px; }
+</style>
+</head>
+<body>
+<div class="navbar">Font Generator</div>
+<div class="header" id="preview"></div>
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" data-tab="text" onclick="switchTab('text')">Text</div>
+    <div class="tab" data-tab="logo" onclick="switchTab('logo')">Logo</div>
+    <div class="tab" data-tab="color" onclick="switchTab('color')">Color</div>
+    <div class="tab" data-tab="download" onclick="switchTab('download')">Download</div>
+  </div>
+  <div id="text" class="tab-content active">
+    <textarea id="textInput" class="auto-textarea" rows="1">Your Text Here</textarea>
+    <div class="file-upload-wrapper">
+      <input type="file" id="fontUpload" multiple>
+      <div class="file-upload-label">Upload Fonts</div>
+    </div>
+    <select id="fontSelector"><option value="">Default</option></select>
+    <label>Font Size</label>
+    <input type="range" id="fontSize" min="10" max="100" value="40">
+    <label>Line Spacing</label>
+    <input type="range" id="lineSpacing" min="1" max="3" step="0.1" value="1.2">
+    <label>Letter Spacing</label>
+    <input type="range" id="letterSpacing" min="0" max="10" value="0">
+  </div>
+  <div id="logo" class="tab-content"><p>Coming soon</p></div>
+  <div id="color" class="tab-content"><input type="color" id="textColor" value="#ffffff"></div>
+  <div id="download" class="tab-content">
+    <button onclick="downloadPNG()">Download as PNG</button>
+    <button onclick="downloadSVG()">Download as SVG</button>
+    <button onclick="downloadSVGPaths()">Download SVG (Paths)</button>
+  </div>
+</div>
+<script>
+let currentFont=null,lastFontFile=null;
+function switchTab(tabId){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.querySelector('.tab[data-tab="'+tabId+'"]').classList.add('active');document.getElementById(tabId).classList.add('active');}
+function updatePreview(){var p=document.getElementById('preview');p.style.fontSize=fontSize.value+'px';p.style.lineHeight=lineSpacing.value;p.style.letterSpacing=letterSpacing.value+'px';p.style.color=textColor.value;p.style.fontFamily=currentFont?("'"+currentFont+"', sans-serif"):'sans-serif';p.textContent=textInput.value;}
+fontUpload.addEventListener('change',function(e){lastFontFile=e.target.files[0]||null;Array.from(e.target.files).forEach(function(file){var blobUrl=URL.createObjectURL(file);var fontName=file.name.replace(/\\..+$/,'')+Date.now();var style=document.createElement('style');style.textContent="@font-face{font-family:'"+fontName+"';src:url('"+blobUrl+"');font-display:swap;}";document.head.appendChild(style);var option=document.createElement('option');option.value=fontName;option.textContent=file.name;fontSelector.appendChild(option);document.fonts.load('40px '+fontName).then(function(){currentFont=fontName;fontSelector.value=fontName;updatePreview();});});});
+fontSelector.addEventListener('change',function(){currentFont=fontSelector.value||null;updatePreview();});
+function autoResize(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
+['textInput','fontSize','lineSpacing','letterSpacing','textColor'].forEach(function(id){var el=document.getElementById(id);el.addEventListener('input',function(){if(id==='textInput')autoResize(el);updatePreview();});});
+function downloadPNG(){var canvas=document.createElement('canvas');var ctx=canvas.getContext('2d');canvas.width=800;canvas.height=200;ctx.fillStyle='#000';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle=textColor.value;ctx.font=fontSize.value+'px '+(currentFont||'sans-serif');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(textInput.value,canvas.width/2,canvas.height/2);var link=document.createElement('a');link.download='text.png';link.href=canvas.toDataURL();link.click();}
+function downloadSVG(){var canvas=document.createElement('canvas');var ctx=canvas.getContext('2d');canvas.width=800;canvas.height=200;ctx.fillStyle='#000';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle=textColor.value;ctx.font=fontSize.value+'px '+(currentFont||'sans-serif');ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(textInput.value,canvas.width/2,canvas.height/2);var imgData=canvas.toDataURL();var svg='<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200"><image href="'+imgData+'" width="800" height="200"/></svg>';var blob=new Blob([svg],{type:'image/svg+xml'});var url=URL.createObjectURL(blob);var link=document.createElement('a');link.href=url;link.download='text.svg';link.click();}
+function downloadSVGPaths(){if(!lastFontFile){alert('Upload a font first');return;}var reader=new FileReader();reader.onload=function(e){var font=opentype.parse(e.target.result);var fontSizePx=parseInt(fontSize.value);var path=font.getPath(textInput.value,50,120,fontSizePx);var pathData=path.toPathData();var svg='<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200"><path d="'+pathData+'" fill="'+textColor.value+'"/></svg>';var blob=new Blob([svg],{type:'image/svg+xml'});var url=URL.createObjectURL(blob);var link=document.createElement('a');link.href=url;link.download='text-paths.svg';link.click();};reader.readAsArrayBuffer(lastFontFile);}
+var script=document.createElement('script');script.src='https://unpkg.com/opentype.js@latest/dist/opentype.min.js';document.head.appendChild(script);
+autoResize(textInput);updatePreview();
+<\/script>
+</body>
+</html>`;
+
+function showClassicConfirm() { document.getElementById('confirmWrap').classList.add('open'); }
+function hideClassicConfirm() { document.getElementById('confirmWrap').classList.remove('open'); }
+function goClassic() {
+  document.open();
+  document.write(CLASSIC_HTML);
+  document.close();
+}
+
+const state = {
+  text:'Your Text Here',fontFamily:'sans-serif',currentFontName:null,
+  fontSize:48,lineHeight:1.2,letterSpacing:0,opacity:100,
+  bold:false,italic:false,underline:false,strike:false,
+  textColor:'#ffffff',bgColor:'#141414',
+  align:'left',transform:'none',
+  shadowBlur:0,shadowX:0,shadowY:0,
+  exportScale:2,lastFontFile:null,
+};
+
+const accentOptions=[
+  {name:'Gold',   hex:'#ffc900',dim:'rgba(255,201,0,0.12)'},
+  {name:'Lime',   hex:'#c8ff00',dim:'rgba(200,255,0,0.12)'},
+  {name:'Cyan',   hex:'#00d4ff',dim:'rgba(0,212,255,0.12)'},
+  {name:'Coral',  hex:'#ff5555',dim:'rgba(255,85,85,0.12)'},
+  {name:'Violet', hex:'#b066ff',dim:'rgba(176,102,255,0.12)'},
+];
+
+function setAccent(idx){
+  const a=accentOptions[idx];
+  document.documentElement.style.setProperty('--accent',a.hex);
+  document.documentElement.style.setProperty('--accent-dim',a.dim);
+  document.querySelectorAll('.accent-opt').forEach((el,i)=>el.classList.toggle('active',i===idx));
+}
+
+function buildAccentOpts(){
+  const container=document.getElementById('accentOpts');
+  accentOptions.forEach((a,i)=>{
+    const opt=document.createElement('div');
+    opt.className='accent-opt'+(i===0?' active':'');
+    opt.innerHTML=`<div class="accent-dot" style="background:${a.hex}"></div><div><div class="accent-name">${a.name}</div><div class="accent-hex">${a.hex}</div></div>`;
+    opt.addEventListener('click',()=>setAccent(i));
+    container.appendChild(opt);
+  });
+}
+
+function openDrawer(){document.getElementById('settingsDrawer').classList.add('open');document.getElementById('overlay').classList.add('open');}
+function closeDrawer(){document.getElementById('settingsDrawer').classList.remove('open');document.getElementById('overlay').classList.remove('open');}
+function setMode(mode){document.body.classList.toggle('light',mode==='light');document.getElementById('darkModeBtn').classList.toggle('active',mode==='dark');document.getElementById('lightModeBtn').classList.toggle('active',mode==='light');}
+
+const textSwatches=['#ffffff','#000000','#ff4444','#ff9900','#ffe800','#44ff88','#00cfff','#7b5cff','#ff3cac','#888888'];
+const bgSwatches  =['#141414','#0a0a0a','#ffffff','#f5f5f0','#1a1a2e','#0f2027','#1b0036','#002b36','#1a0a00','#2a0010'];
+
+const webFonts=[
+  {name:'Syne',          family:"'Syne',sans-serif",        preview:'Aa',url:'https://fonts.googleapis.com/css2?family=Syne:wght@400;700&display=swap'},
+  {name:'Space Mono',    family:"'Space Mono',monospace",   preview:'Aa',url:'https://fonts.googleapis.com/css2?family=Space+Mono&display=swap'},
+  {name:'Playfair',      family:"'Playfair Display',serif", preview:'Aa',url:'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap'},
+  {name:'Bebas Neue',    family:"'Bebas Neue',sans-serif",  preview:'AA',url:'https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap'},
+  {name:'Cinzel',        family:"'Cinzel',serif",           preview:'Aa',url:'https://fonts.googleapis.com/css2?family=Cinzel&display=swap'},
+  {name:'Pacifico',      family:"'Pacifico',cursive",       preview:'Aa',url:'https://fonts.googleapis.com/css2?family=Pacifico&display=swap'},
+  {name:'Oswald',        family:"'Oswald',sans-serif",      preview:'Aa',url:'https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap'},
+  {name:'Dancing Script',family:"'Dancing Script',cursive", preview:'Aa',url:'https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap'},
+];
+const loadedWebFonts=new Set();
+
+function loadWebFont(f){if(loadedWebFonts.has(f.name))return;const link=document.createElement('link');link.rel='stylesheet';link.href=f.url;document.head.appendChild(link);loadedWebFonts.add(f.name);}
+
+function buildWebFontsGrid(){
+  const grid=document.getElementById('webFontsGrid');
+  webFonts.forEach((f,i)=>{
+    loadWebFont(f);
+    const card=document.createElement('div');
+    card.className='web-font-card';card.dataset.idx=i;
+    card.innerHTML=`<div class="web-font-name">${f.name}</div><div class="web-font-preview" style="font-family:${f.family}">${f.preview}</div>`;
+    card.addEventListener('click',()=>{
+      document.querySelectorAll('.web-font-card').forEach(c=>c.classList.remove('active'));
+      card.classList.add('active');
+      document.querySelectorAll('.font-chip').forEach(c=>c.classList.remove('active'));
+      state.fontFamily=f.family;state.currentFontName=null;state.lastFontFile=null;
+      applyPreview();
+    });
+    grid.appendChild(card);
+  });
+}
+
+function buildSwatches(containerId,swatches,stateKey,pickerKey,hexKey){
+  const container=document.getElementById(containerId);
+  swatches.forEach(color=>{
+    const sw=document.createElement('div');
+    sw.className='color-swatch'+(state[stateKey]===color?' active':'');
+    sw.style.background=color;
+    if(color==='#ffffff'||color==='#f5f5f0')sw.style.border='1.5px solid #444';
+    sw.addEventListener('click',()=>{
+      state[stateKey]=color;
+      document.getElementById(pickerKey).value=color;
+      document.getElementById(hexKey).value=color;
+      container.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active'));
+      sw.classList.add('active');
+      applyPreview();
+    });
+    container.appendChild(sw);
+  });
+}
+
+function buildBgToggle(){
+  const toggle=document.getElementById('bgToggle');
+  ['#141414','#ffffff','#1a1a2e','#f5f5f0'].forEach((c,i)=>{
+    const btn=document.createElement('div');
+    btn.className='bg-btn'+(i===0?' active':'');
+    btn.style.background=c;
+    if(c==='#ffffff'||c==='#f5f5f0')btn.style.border='2px solid #555';
+    btn.addEventListener('click',()=>{
+      state.bgColor=c;
+      document.getElementById('stage').style.background=c;
+      document.getElementById('bgColorPicker').value=c;
+      document.getElementById('bgHex').value=c;
+      toggle.querySelectorAll('.bg-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      applyPreview();
+    });
+    toggle.appendChild(btn);
+  });
+}
+
+function applyPreview(){
+  const el=document.getElementById('previewText');
+  el.style.fontSize=state.fontSize+'px';
+  el.style.lineHeight=state.lineHeight;
+  el.style.letterSpacing=state.letterSpacing+'px';
+  el.style.opacity=state.opacity/100;
+  el.style.color=state.textColor;
+  el.style.fontFamily=state.fontFamily;
+  el.style.fontWeight=state.bold?'700':'400';
+  el.style.fontStyle=state.italic?'italic':'normal';
+  el.style.textDecoration=[state.underline?'underline':'',state.strike?'line-through':''].filter(Boolean).join(' ')||'none';
+  el.style.textAlign=state.align;
+  el.style.textTransform=state.transform;
+  const shadow=(state.shadowBlur>0||state.shadowX!==0||state.shadowY!==0)?`${state.shadowX}px ${state.shadowY}px ${state.shadowBlur}px rgba(0,0,0,0.6)`:'none';
+  el.style.textShadow=shadow;
+  document.getElementById('stage').style.background=state.bgColor;
+}
+
+function switchPanel(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.querySelector(`.nav-item[data-panel="${id}"]`).classList.add('active');
+}
+
+function setAlign(a){state.align=a;document.querySelectorAll('.align-btn').forEach(b=>b.classList.toggle('active',b.dataset.align===a));applyPreview();}
+function setTransform(tx){state.transform=tx;document.querySelectorAll('.transform-btn').forEach(b=>b.classList.toggle('active',b.dataset.tx===tx));applyPreview();}
+function toggleBold()     {state.bold=!state.bold;     document.getElementById('boldBtn').classList.toggle('active',state.bold);     applyPreview();}
+function toggleItalic()   {state.italic=!state.italic; document.getElementById('italicBtn').classList.toggle('active',state.italic);   applyPreview();}
+function toggleUnderline(){state.underline=!state.underline;document.getElementById('underlineBtn').classList.toggle('active',state.underline);applyPreview();}
+function toggleStrike()   {state.strike=!state.strike; document.getElementById('strikeBtn').classList.toggle('active',state.strike);   applyPreview();}
+
+function makeSlider(id,valId,suffix,divisor,stateKey){
+  const input=document.getElementById(id),valEl=document.getElementById(valId);
+  input.addEventListener('input',()=>{
+    const v=parseFloat(input.value);
+    state[stateKey]=divisor?v/divisor:v;
+    valEl.textContent=divisor?(v/divisor).toFixed(1):v+suffix;
+    applyPreview();
+  });
+}
+makeSlider('fontSize','fontSizeVal','px',null,'fontSize');
+makeSlider('lineHeight','lineHeightVal','',100,'lineHeight');
+makeSlider('letterSpacing','letterSpacingVal','px',null,'letterSpacing');
+makeSlider('textOpacity','textOpacityVal','%',null,'opacity');
+makeSlider('shadowBlur','shadowBlurVal','',null,'shadowBlur');
+makeSlider('shadowX','shadowXVal','',null,'shadowX');
+makeSlider('shadowY','shadowYVal','',null,'shadowY');
+
+document.getElementById('exportScale').addEventListener('input',e=>{
+  state.exportScale=parseInt(e.target.value);
+  document.getElementById('exportScaleVal').textContent=state.exportScale+'×';
+});
+document.getElementById('textInputBox').addEventListener('input',e=>{
+  state.text=e.target.value;
+  document.getElementById('previewText').textContent=state.text;
+  applyPreview();
+});
+document.getElementById('previewText').addEventListener('input',e=>{
+  state.text=e.target.innerText;
+  document.getElementById('textInputBox').value=state.text;
+});
+
+function setupColorPicker(pickerId,hexId,stateKey){
+  const picker=document.getElementById(pickerId),hex=document.getElementById(hexId);
+  picker.addEventListener('input',e=>{state[stateKey]=e.target.value;hex.value=e.target.value;applyPreview();});
+  hex.addEventListener('input',e=>{if(/^#[0-9a-fA-F]{6}$/.test(e.target.value)){state[stateKey]=e.target.value;picker.value=e.target.value;applyPreview();}});
+}
+setupColorPicker('textColorPicker','textHex','textColor');
+setupColorPicker('bgColorPicker','bgHex','bgColor');
+
+document.getElementById('fontUpload').addEventListener('change',e=>{
+  Array.from(e.target.files).forEach(file=>{
+    state.lastFontFile=file;
+    const blobUrl=URL.createObjectURL(file);
+    const fontName='UF_'+file.name.replace(/\..+$/,'').replace(/\s+/g,'_')+'_'+Date.now();
+    const style=document.createElement('style');
+    style.textContent=`@font-face{font-family:'${fontName}';src:url('${blobUrl}');font-display:swap;}`;
+    document.head.appendChild(style);
+    document.fonts.load('40px '+fontName).then(()=>{
+      state.fontFamily=`'${fontName}',sans-serif`;
+      state.currentFontName=fontName;
+      applyPreview();
+      addFontChip(file.name,fontName,file);
+    });
+  });
+});
+
+function addFontChip(label,fontName,file){
+  const chips=document.getElementById('uploadedFonts');
+  const chip=document.createElement('div');
+  chip.className='font-chip active';chip.textContent=label;
+  chip.addEventListener('click',()=>{
+    document.querySelectorAll('.font-chip').forEach(c=>c.classList.remove('active'));
+    document.querySelectorAll('.web-font-card').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    state.fontFamily=`'${fontName}',sans-serif`;
+    state.currentFontName=fontName;
+    state.lastFontFile=file;
+    applyPreview();
+  });
+  document.querySelectorAll('.font-chip').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.web-font-card').forEach(c=>c.classList.remove('active'));
+  chips.appendChild(chip);
+}
+
+function getDisplayText(){
+  let t=state.text;
+  if(state.transform==='uppercase')t=t.toUpperCase();
+  else if(state.transform==='lowercase')t=t.toLowerCase();
+  else if(state.transform==='capitalize')t=t.replace(/\b\w/g,c=>c.toUpperCase());
+  return t;
+}
+
+function measureTextCanvas(text,font,fontSize,letterSpacing,lineHeight){
+  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+  const weight=state.bold?'700':'400',fStyle=state.italic?'italic':'normal';
+  ctx.font=`${fStyle} ${weight} ${fontSize}px ${font}`;
+  const lines=text.split('\n');
+  let maxW=0;
+  lines.forEach(line=>{const m=ctx.measureText(line);const w=m.width+(letterSpacing*(line.length-1));if(w>maxW)maxW=w;});
+  return {width:Math.ceil(maxW)+40,height:Math.ceil(lines.length*fontSize*lineHeight)+40};
+}
+
+function buildCanvas(){
+  const scale=state.exportScale,displayText=getDisplayText();
+  const {width,height}=measureTextCanvas(displayText,state.fontFamily,state.fontSize,state.letterSpacing,state.lineHeight);
+  const canvas=document.createElement('canvas');
+  canvas.width=width*scale;canvas.height=height*scale;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(scale,scale);
+  ctx.fillStyle=state.bgColor;ctx.fillRect(0,0,width,height);
+  const weight=state.bold?'700':'400',fStyle=state.italic?'italic':'normal';
+  ctx.font=`${fStyle} ${weight} ${state.fontSize}px ${state.fontFamily}`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle=state.textColor;ctx.globalAlpha=state.opacity/100;
+  if(state.shadowBlur>0||state.shadowX!==0||state.shadowY!==0){ctx.shadowBlur=state.shadowBlur;ctx.shadowOffsetX=state.shadowX;ctx.shadowOffsetY=state.shadowY;ctx.shadowColor='rgba(0,0,0,0.6)';}
+  ctx.letterSpacing=state.letterSpacing+'px';
+  const lines=displayText.split('\n');
+  const totalTextH=lines.length*state.fontSize*state.lineHeight;
+  const startY=height/2-totalTextH/2+state.fontSize*state.lineHeight/2;
+  lines.forEach((line,i)=>ctx.fillText(line,width/2,startY+i*state.fontSize*state.lineHeight));
+  return {canvas,width,height,displayText};
+}
+
+function downloadPNG(){const{canvas}=buildCanvas();const link=document.createElement('a');link.download='fontgen.png';link.href=canvas.toDataURL('image/png');link.click();}
+function downloadSVG(){const{canvas,width,height}=buildCanvas();const imgData=canvas.toDataURL();const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><image href="${imgData}" width="${width}" height="${height}"/></svg>`;const blob=new Blob([svg],{type:'image/svg+xml'});const link=document.createElement('a');link.download='fontgen.svg';link.href=URL.createObjectURL(blob);link.click();}
+function downloadSVGPaths(){
+  if(!state.lastFontFile){alert('Upload a font first to use SVG Paths export.');return;}
+  const displayText=getDisplayText();
+  const{width,height}=measureTextCanvas(displayText,state.fontFamily,state.fontSize,state.letterSpacing,state.lineHeight);
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const font=opentype.parse(e.target.result);
+    const path=font.getPath(displayText,20,height/2+state.fontSize*0.35,state.fontSize);
+    const pathData=path.toPathData();
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="${width}" height="${height}" fill="${state.bgColor}"/><path d="${pathData}" fill="${state.textColor}"/></svg>`;
+    const blob=new Blob([svg],{type:'image/svg+xml'});const link=document.createElement('a');link.download='fontgen-paths.svg';link.href=URL.createObjectURL(blob);link.click();
+  };
+  reader.readAsArrayBuffer(state.lastFontFile);
+}
+function copyCSS(){
+  const weight=state.bold?'700':'400',fStyle=state.italic?'italic':'normal';
+  const css=`font-family: ${state.fontFamily};\nfont-size: ${state.fontSize}px;\nfont-weight: ${weight};\nfont-style: ${fStyle};\ncolor: ${state.textColor};\nletter-spacing: ${state.letterSpacing}px;\nline-height: ${state.lineHeight};\ntext-transform: ${state.transform};\ntext-align: ${state.align};`;
+  navigator.clipboard.writeText(css).then(()=>{const btn=document.getElementById('cssBtnLabel');btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy CSS',1500);});
+}
+
+buildAccentOpts();setAccent(0);
+buildWebFontsGrid();
+buildSwatches('textColorSwatches',textSwatches,'textColor','textColorPicker','textHex');
+buildSwatches('bgColorSwatches',bgSwatches,'bgColor','bgColorPicker','bgHex');
+buildBgToggle();
+applyPreview();
+</script>
+</body>
+</html>
