@@ -69,4 +69,5 @@ input:focus, textarea:focus {
 
 .nav-bar {
   background-color: #171717;
+  width: 100vw
 }
