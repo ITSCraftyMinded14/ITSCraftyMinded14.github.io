@@ -66,3 +66,7 @@ input:focus, textarea:focus {
     border-color: #ffdd57;
     box-shadow: 0 0 8px #ffdd57;
 }
+
+.nav-bar {
+  background-color: #171717;
+}
