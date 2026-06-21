@@ -1,0 +1,50 @@
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+      "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js"
+    }
+  }
+</script>
+
+<script type="module">
+  import * as THREE from 'three';
+  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+  import { VRMLoaderPlugin } from '@pixiv/three-vrm';
+
+  // ... Setup renderer, camera, scene ...
+
+  // Create a GLTFLoader - The loader for loading VRM models
+  const loader = new GLTFLoader();
+
+  // Install a GLTFLoader plugin that enables VRM support
+  loader.register((parser) => {
+    return new VRMLoaderPlugin(parser);
+  });
+
+  loader.load(
+    // URL of the VRM you want to load
+    '/models/VRM1_Constraint_Twist_Sample.vrm',
+
+    // called when the resource is loaded
+    (gltf) => {
+      // retrieve a VRM instance from gltf
+      const vrm = gltf.userData.vrm;
+
+      // add the loaded vrm to the scene
+      scene.add(vrm.scene);
+
+      // deal with vrm features
+      console.log(vrm);
+    },
+
+    // called while loading is progressing
+    (progress) => console.log('Loading model...', 100.0 * (progress.loaded / progress.total), '%'),
+
+    // called when loading has errors
+    (error) => console.error(error),
+  );
+
+  // ... Perform the render loop ...
+</script>
