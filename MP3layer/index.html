@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MP3layer</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0a0f;
+    --surface:#13131a;
+    --surface2:#1c1c26;
+    --surface3:#24242f;
+    --border:rgba(255,255,255,0.07);
+    --accent:#a78bfa;
+    --accent2:#7c3aed;
+    --text:#f1f0ff;
+    --muted:#6b6b8a;
+    --progress-track:#2a2a38;
+  }
+  body{background:var(--bg);font-family:system-ui,sans-serif;color:var(--text);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;margin:0}
+
+  #player{display:flex;height:540px;border-radius:20px;overflow:hidden;background:var(--bg);border:1px solid var(--border);width:100%;max-width:700px}
+
+  /* SIDEBAR */
+  #sidebar{width:230px;background:var(--surface);display:flex;flex-direction:column;border-right:1px solid var(--border);flex-shrink:0}
+  #sidebar-header{padding:18px 16px 10px;display:flex;align-items:center;gap:8px}
+  #sidebar-header span{font-size:14px;font-weight:500;letter-spacing:0.02em}
+  .section-label{padding:6px 16px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)}
+
+  /* action row */
+  #action-row{display:flex;gap:6px;padding:0 12px 10px}
+  .action-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px 6px;border-radius:9px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--muted);font-size:11px;transition:all 0.15s;white-space:nowrap}
+  .action-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.15);background:var(--surface2)}
+  .action-btn.accent{color:var(--accent);border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04)}
+  .action-btn.accent:hover{background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.5)}
+  #file-input{display:none}
+  #sroq-input{display:none}
+
+  /* track list */
+  #track-list{flex:1;overflow-y:auto;padding:4px 0}
+  #track-list::-webkit-scrollbar{width:3px}
+  #track-list::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+  .track-item{display:flex;align-items:center;gap:8px;padding:7px 12px 7px 8px;cursor:pointer;transition:background 0.15s;user-select:none;position:relative}
+  .track-item:hover{background:var(--surface2)}
+  .track-item.active{background:rgba(167,139,250,0.12)}
+  .track-item.drag-over{border-top:2px solid var(--accent)}
+  .track-item.dragging{opacity:0.4}
+  .drag-handle{color:var(--muted);font-size:13px;cursor:grab;padding:2px 2px;flex-shrink:0;line-height:1}
+  .drag-handle:active{cursor:grabbing}
+  .track-num{width:18px;font-size:11px;color:var(--muted);text-align:center;flex-shrink:0}
+  .track-item.active .track-num{color:var(--accent)}
+  .track-name-side{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+  .track-item.active .track-name-side{color:var(--accent)}
+  .del-btn{opacity:0;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px;transition:all 0.15s;flex-shrink:0;line-height:1}
+  .track-item:hover .del-btn{opacity:1}
+  .del-btn:hover{color:#f87171;background:rgba(248,113,113,0.1)}
+  .empty-state{text-align:center;color:var(--muted);font-size:13px;padding:24px 16px;line-height:1.6}
+
+  /* MAIN */
+  #main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  #now-playing{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 32px 12px}
+  #album-art{width:148px;height:148px;border-radius:16px;background:linear-gradient(135deg,var(--accent2),#1e1b4b);display:flex;align-items:center;justify-content:center;font-size:48px;flex-shrink:0}
+  #track-details{margin-top:20px;text-align:center;width:100%}
+  #track-title{font-size:17px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
+  #track-sub{font-size:12px;color:var(--muted);margin-top:4px}
+
+  /* PROGRESS */
+  #progress-wrap{padding:0 32px 6px;width:100%}
+  #progress-bar{width:100%;height:3px;background:var(--progress-track);border-radius:2px;cursor:pointer;position:relative;margin:10px 0 5px}
+  #progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent2),var(--accent));width:0%;transition:width 0.1s linear;pointer-events:none}
+  #progress-thumb{width:12px;height:12px;border-radius:50%;background:var(--text);position:absolute;top:50%;transform:translateY(-50%) translateX(-50%);left:0%;opacity:0;transition:opacity 0.15s;pointer-events:none}
+  #progress-bar:hover #progress-thumb{opacity:1}
+  #seek-input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  .time-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+
+  /* CONTROLS */
+  #controls{padding:6px 32px 22px;display:flex;flex-direction:column;gap:10px}
+  #btn-row{display:flex;align-items:center;justify-content:center;gap:6px}
+  .ctrl-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:15px}
+  .ctrl-btn:hover{color:var(--text);background:var(--surface2)}
+  .ctrl-btn.active{color:var(--accent)}
+  #play-btn{width:46px;height:46px;border-radius:50%;background:var(--accent);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:19px;transition:all 0.15s;flex-shrink:0}
+  #play-btn:hover{background:#8b5cf6;transform:scale(1.05)}
+  #play-btn:active{transform:scale(0.97)}
+  #vol-row{display:flex;align-items:center;gap:10px}
+  .vol-icon{font-size:13px;color:var(--muted)}
+  #vol-slider{flex:1;accent-color:var(--accent);cursor:pointer}
+  #mode-badge{font-size:10px;color:var(--muted);letter-spacing:0.05em;min-width:24px;text-align:center}
+</style>
+</head>
+<body>
+
+<div id="player">
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <span style="color:var(--accent);font-size:18px">♫</span>
+      <span>Your library</span>
+    </div>
+
+    <div id="action-row">
+      <label class="action-btn accent" for="file-input" title="Add audio files">⊕ Add</label>
+      <label class="action-btn" for="sroq-input" title="Import .sroq">📂 Import</label>
+      <button class="action-btn" onclick="exportSroq()" title="Export .sroq">📦 Export</button>
+    </div>
+    <input type="file" id="file-input" multiple accept="audio/*">
+    <input type="file" id="sroq-input" accept=".sroq,.zip">
+
+    <div class="section-label">Queue</div>
+    <div id="track-list"><div class="empty-state">No tracks yet<br><span style="font-size:11px">Add files or import a .sroq</span></div></div>
+  </div>
+
+  <div id="main">
+    <div id="now-playing">
+      <div id="album-art">♪</div>
+      <div id="track-details">
+        <div id="track-title">Nothing playing</div>
+        <div id="track-sub">Add tracks to get started</div>
+      </div>
+    </div>
+
+    <div id="progress-wrap">
+      <div id="progress-bar">
+        <div id="progress-fill"></div>
+        <div id="progress-thumb"></div>
+        <input type="range" id="seek-input" min="0" max="100" step="0.1" value="0">
+      </div>
+      <div class="time-row">
+        <span id="time-cur">0:00</span>
+        <span id="time-dur">0:00</span>
+      </div>
+    </div>
+
+    <div id="controls">
+      <div id="btn-row">
+        <button class="ctrl-btn" id="shuf-btn" onclick="doShuffle()" title="Shuffle" aria-label="Shuffle">⇄</button>
+        <button class="ctrl-btn" onclick="doPrev()" aria-label="Previous">⏮</button>
+        <button id="play-btn" onclick="doToggle()" aria-label="Play / pause"><span id="play-icon">▶</span></button>
+        <button class="ctrl-btn" onclick="doNext()" aria-label="Next">⏭</button>
+        <button class="ctrl-btn" id="rep-btn" onclick="doRepeat()" aria-label="Repeat"><span id="rep-icon">↻</span></button>
+      </div>
+      <div id="vol-row">
+        <span class="vol-icon">🔈</span>
+        <input type="range" id="vol-slider" min="0" max="1" step="0.01" value="1">
+        <span id="mode-badge">off</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<audio id="audio-el"></audio>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+let songs=[], idx=0, repeat=0;
+let dragSrc=null;
+const audio=document.getElementById('audio-el');
+
+function fmt(s){s=Math.floor(s||0);return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0')}
+
+/* ── ADD FILES ── */
+document.getElementById('file-input').onchange=e=>{
+  for(let f of e.target.files) songs.push({name:f.name.replace(/\.[^.]+$/,''),url:URL.createObjectURL(f),file:f});
+  e.target.value='';
+  renderList();
+};
+
+/* ── RENDER ── */
+function renderList(){
+  const el=document.getElementById('track-list');
+  if(!songs.length){el.innerHTML='<div class="empty-state">No tracks yet<br><span style="font-size:11px">Add files or import a .sroq</span></div>';return;}
+  el.innerHTML=songs.map((s,i)=>`
+    <div class="track-item${i===idx&&audio.src?' active':''}"
+         draggable="true"
+         data-i="${i}"
+         ondragstart="dragStart(event,${i})"
+         ondragover="dragOver(event)"
+         ondragleave="dragLeave(event)"
+         ondrop="dragDrop(event,${i})"
+         ondragend="dragEnd(event)">
+      <span class="drag-handle" title="Drag to reorder">⠿</span>
+      <span class="track-num">${i===idx&&audio.src?'▶':i+1}</span>
+      <span class="track-name-side" onclick="play(${i})" style="cursor:pointer">${s.name}</span>
+      <button class="del-btn" onclick="removeTrack(${i})" title="Remove">✕</button>
+    </div>`).join('');
+}
+
+/* ── PLAY ── */
+function play(i){
+  idx=i;
+  audio.src=songs[idx].url;
+  audio.play();
+  updateNowPlaying();
+  renderList();
+}
+
+function updateNowPlaying(){
+  const s=songs[idx];
+  if(!s) return;
+  document.getElementById('track-title').textContent=s.name;
+  document.getElementById('track-sub').textContent='Track '+(idx+1)+' of '+songs.length;
+  document.getElementById('play-icon').textContent='⏸';
+}
+
+/* ── CONTROLS ── */
+function doToggle(){
+  if(!songs.length) return;
+  if(!audio.src) play(idx);
+  else if(audio.paused) audio.play(); else audio.pause();
+}
+function doNext(){
+  if(!songs.length) return;
+  if(idx<songs.length-1) idx++;
+  else if(repeat>0) idx=0;
+  else return;
+  audio.src=songs[idx].url; audio.play(); updateNowPlaying(); renderList();
+}
+function doPrev(){
+  if(!songs.length) return;
+  if(audio.currentTime>3){audio.currentTime=0;return;}
+  if(idx>0) idx--;
+  audio.src=songs[idx].url; audio.play(); updateNowPlaying(); renderList();
+}
+function doShuffle(){
+  const cur=songs[idx];
+  for(let j=songs.length-1;j>0;j--){let k=Math.floor(Math.random()*(j+1));[songs[j],songs[k]]=[songs[k],songs[j]];}
+  idx=songs.indexOf(cur);
+  document.getElementById('shuf-btn').classList.toggle('active');
+  renderList();
+}
+function doRepeat(){
+  repeat=(repeat+1)%3;
+  document.getElementById('mode-badge').textContent=['off','all','1'][repeat];
+  document.getElementById('rep-btn').classList.toggle('active',repeat>0);
+  document.getElementById('rep-icon').textContent=repeat===2?'↺':'↻';
+}
+
+/* ── REMOVE ── */
+function removeTrack(i){
+  const wasPlaying=i===idx&&!audio.paused;
+  songs.splice(i,1);
+  if(!songs.length){audio.pause();audio.src='';document.getElementById('track-title').textContent='Nothing playing';document.getElementById('track-sub').textContent='Add tracks to get started';document.getElementById('play-icon').textContent='▶';renderList();return;}
+  if(i<idx) idx--;
+  else if(i===idx){idx=Math.min(idx,songs.length-1);if(wasPlaying){audio.src=songs[idx].url;audio.play();updateNowPlaying();}}
+  renderList();
+}
+
+/* ── DRAG & DROP reorder ── */
+function dragStart(e,i){dragSrc=i;e.currentTarget.classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+function dragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';e.currentTarget.classList.add('drag-over');}
+function dragLeave(e){e.currentTarget.classList.remove('drag-over');}
+function dragDrop(e,i){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(dragSrc===null||dragSrc===i) return;
+  const cur=songs[idx];
+  const moved=songs.splice(dragSrc,1)[0];
+  songs.splice(i,0,moved);
+  idx=songs.indexOf(cur);
+  renderList();
+}
+function dragEnd(e){e.currentTarget.classList.remove('dragging');dragSrc=null;}
+
+/* ── EXPORT .sroq ── */
+async function exportSroq(){
+  if(!songs.length){alert('No tracks to export.');return;}
+  const zip=new JSZip();
+  const order=songs.map(s=>s.name);
+  zip.file('queue.json',JSON.stringify({order},null,2));
+  for(let s of songs){
+    if(s.file) zip.file(s.name+'.mp3',s.file);
+  }
+  const raw=await zip.generateAsync({type:'uint8array'});
+  const blob=new Blob([raw],{type:'application/octet-stream'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='playlist.sroq';
+  a.click();
+}
+
+/* ── IMPORT .sroq ── */
+document.getElementById('sroq-input').onchange=async e=>{
+  const f=e.target.files[0];
+  if(!f) return;
+  e.target.value='';
+  try{
+    const zip=await JSZip.loadAsync(f);
+    let order=null;
+    const qf=zip.file('queue.json');
+    if(qf) order=(JSON.parse(await qf.async('string'))).order;
+    const audioExts=/\.(mp3|wav|ogg|flac|aac|m4a)$/i;
+    const fileMap={};
+    for(let name of Object.keys(zip.files)){
+      if(audioExts.test(name)&&!zip.files[name].dir){
+        const blob=await zip.files[name].async('blob');
+        const base=name.replace(/\.[^.]+$/,'');
+        fileMap[base]={url:URL.createObjectURL(blob),file:new File([blob],name)};
+      }
+    }
+    const newSongs=[];
+    if(order){
+      for(let n of order) if(fileMap[n]) newSongs.push({name:n,...fileMap[n]});
+      for(let [n,d] of Object.entries(fileMap)) if(!order.includes(n)) newSongs.push({name:n,...d});
+    } else {
+      for(let [n,d] of Object.entries(fileMap)) newSongs.push({name:n,...d});
+    }
+    songs=[...songs,...newSongs];
+    renderList();
+  }catch(err){alert('Could not read .sroq file: '+err.message);}
+};
+
+/* ── PROGRESS / VOLUME ── */
+audio.ontimeupdate=()=>{
+  const pct=audio.duration?(audio.currentTime/audio.duration)*100:0;
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-thumb').style.left=pct+'%';
+  document.getElementById('seek-input').value=pct;
+  document.getElementById('time-cur').textContent=fmt(audio.currentTime);
+  document.getElementById('time-dur').textContent=fmt(audio.duration);
+};
+document.getElementById('seek-input').oninput=e=>{if(audio.duration)audio.currentTime=(e.target.value/100)*audio.duration;};
+document.getElementById('vol-slider').oninput=e=>{audio.volume=e.target.value;};
+audio.onended=()=>{if(repeat===2){audio.currentTime=0;audio.play();}else doNext();};
+audio.onpause=()=>{if(audio.src)document.getElementById('play-icon').textContent='▶';}
+audio.onplay=()=>{document.getElementById('play-icon').textContent='⏸';}
+
+/* ── KEYBOARD ── */
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT') return;
+  if(e.code==='Space'){e.preventDefault();doToggle();}
+  if(e.code==='ArrowRight') doNext();
+  if(e.code==='ArrowLeft') doPrev();
+});
+</script>
+</body>
+</html>
